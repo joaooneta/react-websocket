@@ -7,6 +7,7 @@ let turno = null;
 let baralho;
 let cartaTopoPilhaDescarte = null;
 let vencedor = null;
+let empate = false;
 
 const valores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 const naipes = ["♣️", "♠️", "♥️", "♦️"];
@@ -61,12 +62,14 @@ function atualizarVencedor() {
   const id = vencedor.id;
   const mao = vencedor.mao;
 
+  const data = !empate ? { id, mao } : null;
+
   jogadores.forEach((j) =>
-    j.ws.send(JSON.stringify({ type: "ATUALIZAR_VENCEDOR", data: { id, mao } }))
+    j.ws.send(JSON.stringify({ type: "ATUALIZAR_VENCEDOR", data }))
   );
 }
 
-function montarBaralho(modoTeste = null) {
+function montarBaralho(modoTeste) {
   const baralho = [];
   for (let v of valores) {
     for (let n of naipes) {
@@ -101,7 +104,7 @@ function getMaos() {
 }
 
 function iniciarJogo() {
-  baralho = montarBaralho(true);
+  baralho = montarBaralho(false);
 
   const [maoJogador1, maoJogador2] = getMaos();
 
@@ -109,6 +112,8 @@ function iniciarJogo() {
   jogadores[1].mao = maoJogador2;
 
   idJogadorAtivo = jogadores[0].id;
+
+  //baralho.length = 0;
 
   atualizarMaos();
   atualizarJogadorAtivo();
@@ -171,9 +176,10 @@ function reiniciar() {
 function reiniciarPartida() {
   status = "JOGANDO";
   turno = "COMPRANDO";
-  baralho = montarBaralho(true);
+  baralho = montarBaralho(false);
   cartaTopoPilhaDescarte = null;
   vencedor = null;
+  empate = false;
 
   const [maoJogador1, maoJogador2] = getMaos();
 
@@ -233,6 +239,14 @@ server.on("connection", (ws) => {
     }
 
     if (type === "EFETIVAR_COMPRA_BARALHO" && turno === "COMPRANDO") {
+      if (baralho.length === 0) {
+        status = "FIM_DE_JOGO";
+        empate = true;
+
+        atualizarVencedor();
+        atualizarStatus();
+      }
+
       const cartaTopo = baralho.shift();
 
       jogadores[indexJogadorClient].mao.push(cartaTopo);

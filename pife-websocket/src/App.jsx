@@ -34,6 +34,16 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (status === "PAREANDO") {
+      setMao(null);
+      setPilhaDescarte(null);
+      setTurno(null);
+      setMeuTurno(false);
+      setVencedor(null);
+    }
+  }, [status]);
+
   return (
     <>
       {status === "PAREANDO" && <Pareando />}
